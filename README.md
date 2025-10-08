@@ -201,13 +201,13 @@ Finally, some delays are caused by issues that require human intervention.
 
 ## Answer 13
 Immediate Actions
-    * Verify Status with NPCI: The immediate action is to use an internal tool to check the definitive status of the transaction with NPCI.
+* Verify Status with NPCI: The immediate action is to use an internal tool to check the definitive status of the transaction with NPCI.
 
-    * Manually Reconcile: Once confirmed as SUCCESS by NPCI, manually update the transaction status in the Paytm database to SUCCESS to resolve the issue for the customer.
+* Manually Reconcile: Once confirmed as SUCCESS by NPCI, manually update the transaction status in the Paytm database to SUCCESS to resolve the issue for the customer.
 
-    * Raise Incident with Yes Bank: Immediately open a high-priority incident with the technical team at Yes Bank, providing the npciRequestId and logs. This is crucial to get them to investigate the two-hour callback delay and the critical double-credit bug.
+* Raise Incident with Yes Bank: Immediately open a high-priority incident with the technical team at Yes Bank, providing the npciRequestId and logs. This is crucial to get them to investigate the two-hour callback delay and the critical double-credit bug.
 
-    Immediate Response to Customer
+Immediate Response to Customer
 A clear and empathetic response is key.
 
 "Hi [Customer Name],
