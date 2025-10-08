@@ -10,9 +10,9 @@ The logs show that Yes Bank only sent the credit/resp API call confirming the su
 
 Yes, the funds were both deducted from the sender and credited to the receiver.
 
-- **Fund Deduction:** The logs confirm that Axis Bank successfully debited the sender's account. The database query `UPDATE RemitterCBS SET amount = amount - 1.00` was executed at 15:10:49. Axis Bank then sent a SUCCESS confirmation to NPCI at 15:10:50. To verify this, one would check the `debitFunds` API calls and the `RemitterCBS` and `RemitterPassBook` tables at Axis Bank's end.
+* **Fund Deduction:** The logs confirm that Axis Bank successfully debited the sender's account. The database query `UPDATE RemitterCBS SET amount = amount - 1.00` was executed at 15:10:49. Axis Bank then sent a SUCCESS confirmation to NPCI at 15:10:50. To verify this, one would check the `debitFunds` API calls and the `RemitterCBS` and `RemitterPassBook` tables at Axis Bank's end.
 
-- **Fund Credit:** The funds were credited to the receiver's account by Yes Bank. The database query `UPDATE BeneficiaryCBS SET amount = amount + 1.00` was executed at 15:10:51. To verify this, one would check the `creditFunds` API calls and the `BeneficiaryCBS` and `BeneficiaryPassBook` tables at Yes Bank's end.
+* **Fund Credit:** The funds were credited to the receiver's account by Yes Bank. The database query `UPDATE BeneficiaryCBS SET amount = amount + 1.00` was executed at 15:10:51. To verify this, one would check the `creditFunds` API calls and the `BeneficiaryCBS` and `BeneficiaryPassBook` tables at Yes Bank's end.
 
 ## Answer3
 
@@ -26,25 +26,25 @@ The entity providing the latest available transaction update to Paytm was NPCI. 
 
 Before making any changes, you must confirm the transaction's true, final state. The most critical step is to query the central authority for all UPI payments.
 
-- **Query NPCI:** Use an internal tool to check the status of the transaction using its unique `npciRequestId` (`HST<HIDDEN>9910`) directly with NPCI. NPCI is the authoritative source of truth for the entire transaction lifecycle.
+* **Query NPCI:** Use an internal tool to check the status of the transaction using its unique `npciRequestId` (`HST<HIDDEN>9910`) directly with NPCI. NPCI is the authoritative source of truth for the entire transaction lifecycle.
   
-- **Cross-Verify with Banks (Optional):** As a secondary check, you can verify that the funds were indeed debited from Axis Bank and credited to Yes Bank, but the NPCI status is the primary trigger for this manual update.
+* **Cross-Verify with Banks (Optional):** As a secondary check, you can verify that the funds were indeed debited from Axis Bank and credited to Yes Bank, but the NPCI status is the primary trigger for this manual update.
 
 ### 2. Obtain Authorization
 
 A manual database change requires formal approval.
 
-- **Log the Evidence:** Document the confirmation of success from NPCI.
+* **Log the Evidence:** Document the confirmation of success from NPCI.
   
-- **Request Approval:** Present the evidence to a manager or team lead to get explicit approval for the manual intervention. This creates an audit trail and ensures accountability.
+* **Request Approval:** Present the evidence to a manager or team lead to get explicit approval for the manual intervention. This creates an audit trail and ensures accountability.
 
 ### 3. Execute the Database Update
 
 Once authorized, a designated engineer will perform the update on Paytm's database only. You must never alter bank-side ledgers.
 
-- **Identify the Record:** Locate the transaction in Paytm's internal tables using the `npciRequestId`.
+* **Identify the Record:** Locate the transaction in Paytm's internal tables using the `npciRequestId`.
   
-- **Run Update Query:** Execute SQL commands to change the status from PENDING to SUCCESS. Based on the logs, this would involve updating tables like `TRANSACTION_LS_202406` and `customerTransactionDetails`.
+* **Run Update Query:** Execute SQL commands to change the status from PENDING to SUCCESS. Based on the logs, this would involve updating tables like `TRANSACTION_LS_202406` and `customerTransactionDetails`.
 
 ```sql
 -- Update the main transaction log
@@ -109,17 +109,17 @@ WHERE npciRequestId = '<npciRequestId>';
 ```
 
 ## Answer 7
-- Synchronous APIs: These calls require an immediate response for the flow to continue.
+* Synchronous APIs: These calls require an immediate response for the flow to continue.
 
-    - resolveAddress: NPCI must wait for GPay to return the receiver's bank details before it can proceed.
+    * resolveAddress: NPCI must wait for GPay to return the receiver's bank details before it can proceed.
 
-    - statusCheck: Paytm makes this call and waits for an immediate response from NPCI regarding the current transaction state.
+    * statusCheck: Paytm makes this call and waits for an immediate response from NPCI regarding the current transaction state.
 
-- Asynchronous APIs: These calls are initiated, and the system moves on after receiving an acknowledgement (like "Processing"), without waiting for the final result. The final result is communicated later via a separate callback.
+* Asynchronous APIs: These calls are initiated, and the system moves on after receiving an acknowledgement (like "Processing"), without waiting for the final result. The final result is communicated later via a separate callback.
 
-    - makePayment: The primary payment initiation from Paytm to NPCI is asynchronous. Paytm gets a PENDING status and waits for a final success/failure notification later.
+    * makePayment: The primary payment initiation from Paytm to NPCI is asynchronous. Paytm gets a PENDING status and waits for a final success/failure notification later.
 
-    - debitFunds / creditFunds: The calls from NPCI to the banks are asynchronous. NPCI receives an initial PENDING response and relies on separate callback APIs (debit/resp, credit/resp) from the banks to get the final status.
+    * debitFunds / creditFunds: The calls from NPCI to the banks are asynchronous. NPCI receives an initial PENDING response and relies on separate callback APIs (debit/resp, credit/resp) from the banks to get the final status.
 
 
 
@@ -161,11 +161,11 @@ This indicates a bug, likely a race condition or a lack of idempotency in the cr
 ## Answer 11
 Yes, delayed transaction confirmations and reconciliation issues are common challenges in distributed payment systems. Here is how such issues can be prevented in the future:
 
-    - Stricter SLAs: Enforce and monitor stricter Service Level Agreements (SLAs) with partner banks for the turnaround time of asynchronous callbacks. Breaches should trigger alerts and potentially have financial penalties.
+    * Stricter SLAs: Enforce and monitor stricter Service Level Agreements (SLAs) with partner banks for the turnaround time of asynchronous callbacks. Breaches should trigger alerts and potentially have financial penalties.
 
-    - Proactive Monitoring & Alerting: Implement a monitoring system that tracks the age of transactions. If a transaction remains in a PENDING state beyond a reasonable threshold (e.g., 5 minutes), an automatic alert should be fired to the engineering team for proactive investigation.
+    * Proactive Monitoring & Alerting: Implement a monitoring system that tracks the age of transactions. If a transaction remains in a PENDING state beyond a reasonable threshold (e.g., 5 minutes), an automatic alert should be fired to the engineering team for proactive investigation.
 
-    - Automated Reconciliation: Instead of relying solely on delayed callbacks, build an automated reconciliation service that periodically polls NPCI for the status of pending transactions and updates the system accordingly. This ensures that the user-facing status is accurate even if a partner bank fails to send a timely response.
+    * Automated Reconciliation: Instead of relying solely on delayed callbacks, build an automated reconciliation service that periodically polls NPCI for the status of pending transactions and updates the system accordingly. This ensures that the user-facing status is accurate even if a partner bank fails to send a timely response.
 
 
 ## Answer 12
@@ -201,11 +201,11 @@ Manual Review: A transaction might be flagged for a fraud check or operational r
 
 ## Answer 13
 Immediate Actions
-    - Verify Status with NPCI: The immediate action is to use an internal tool to check the definitive status of the transaction with NPCI.
+    * Verify Status with NPCI: The immediate action is to use an internal tool to check the definitive status of the transaction with NPCI.
 
-    - Manually Reconcile: Once confirmed as SUCCESS by NPCI, manually update the transaction status in the Paytm database to SUCCESS to resolve the issue for the customer.
+    * Manually Reconcile: Once confirmed as SUCCESS by NPCI, manually update the transaction status in the Paytm database to SUCCESS to resolve the issue for the customer.
 
-    - Raise Incident with Yes Bank: Immediately open a high-priority incident with the technical team at Yes Bank, providing the npciRequestId and logs. This is crucial to get them to investigate the two-hour callback delay and the critical double-credit bug.
+    * Raise Incident with Yes Bank: Immediately open a high-priority incident with the technical team at Yes Bank, providing the npciRequestId and logs. This is crucial to get them to investigate the two-hour callback delay and the critical double-credit bug.
 
     Immediate Response to Customer
 A clear and empathetic response is key.
@@ -220,5 +220,3 @@ We sincerely apologize for the confusion and appreciate your patience.
 
 Thank you,
 Juspay Support"
-
-Longer term: fix automation so Paytm auto-marks success when both bank passbooks show credit or when NPCI confirms within configured SLA; add compensating/rollback flows if end outcome is inconsistent.
