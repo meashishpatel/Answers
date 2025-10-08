@@ -68,10 +68,10 @@ This is calculated by comparing the timestamp in the request headers (16:55:00) 
 
 For reference: {"x-request-id":"uisu-XXXX-8uj","x-client-id":"<HIDDEN>","content-type":"application/json","x-app-name":"juspay","x-timestamp":"2024-06-05 16:55:33"}
 
-## Answer 5
+## Answer 6
 When a user initiates a ₹500 UPI payment, NPCI performs a series of database operations to record and track the transaction lifecycle. Based on the observed patterns in the log file, the following queries represent the typical flow at the NPCI end:
 
-Initial Insert — Transaction Creation
+1. Initial Insert — Transaction Creation
 Upon receiving the transaction request from the PSP (e.g., Paytm), NPCI creates a new record marking both debit and credit statuses as PENDING.
 ```sql
 INSERT INTO newTransactions 
@@ -80,3 +80,54 @@ VALUES
     ('<npciRequestId>', 500.00, 'payer@axis', 'payee@yes', 'PENDING', 'PENDING', CURRENT_TIMESTAMP);
 ```
 
+2. Debit Status Update — Confirmation from Payer’s Bank
+Once NPCI receives a success acknowledgment from the payer’s bank (e.g., Axis Bank), it updates the debit status to SUCCESS.
+
+```sql
+UPDATE newTransactions
+SET debitStatus = 'SUCCESS', debitUpdatedAt = CURRENT_TIMESTAMP
+WHERE npciRequestId = '<npciRequestId>';
+```
+
+3. UPDATE newTransactions
+SET debitStatus = 'SUCCESS', debitUpdatedAt = CURRENT_TIMESTAMP
+WHERE npciRequestId = '<npciRequestId>';
+
+```sql
+UPDATE newTransactions
+SET creditStatus = 'SUCCESS', creditUpdatedAt = CURRENT_TIMESTAMP
+WHERE npciRequestId = '<npciRequestId>';
+```
+
+4. Status Check — Queried by Participant Applications
+When an app (like Paytm or Google Pay) performs a status check, NPCI retrieves the current debit and credit status for that transaction.
+
+```sql
+SELECT debitStatus, creditStatus 
+FROM newTransactions 
+WHERE npciRequestId = '<npciRequestId>';
+```
+
+## Answer 7
+- Synchronous APIs: These calls require an immediate response for the flow to continue.
+
+    - resolveAddress: NPCI must wait for GPay to return the receiver's bank details before it can proceed.
+
+    - statusCheck: Paytm makes this call and waits for an immediate response from NPCI regarding the current transaction state.
+
+- Asynchronous APIs: These calls are initiated, and the system moves on after receiving an acknowledgement (like "Processing"), without waiting for the final result. The final result is communicated later via a separate callback.
+
+    - makePayment: The primary payment initiation from Paytm to NPCI is asynchronous. Paytm gets a PENDING status and waits for a final success/failure notification later.
+
+    - debitFunds / creditFunds: The calls from NPCI to the banks are asynchronous. NPCI receives an initial PENDING response and relies on separate callback APIs (debit/resp, credit/resp) from the banks to get the final status.
+
+
+
+## Answer 8
+The customer saw the transaction as "Pending" for over an hour because the final success confirmation was delayed. The entity that contributed to this delay was Yes Bank.
+
+
+Although Yes Bank processed the credit internally at 15:10:51, it failed to send the success callback to NPCI until 17:10:52. Because NPCI did not have this final confirmation, it continued to report the transaction status as PENDING to Paytm during its periodic status checks.
+
+
+## Answer 9
