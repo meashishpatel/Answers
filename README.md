@@ -131,3 +131,29 @@ Although Yes Bank processed the credit internally at 15:10:51, it failed to send
 
 
 ## Answer 9
+The final status of the transaction is SUCCESS.
+
+I came to this conclusion by following the logs to the very end of the transaction lifecycle. The key events confirming the success are:
+
+1. Yes Bank sends a credit/resp call to NPCI with "transactionStatus":"SUCCESS" at 17:10:52.
+
+2. NPCI updates its database, setting creditStatus = 'SUCCESS' at 17:10:53.
+
+3. NPCI sends a final notification to Paytm with "result":"SUCCESS" at 17:10:54.
+
+
+4. Paytm updates its internal database tables to reflect the SUCCESS status.
+
+
+## Answer 10
+The receiver's claim that they received ₹2 is true.
+
+My analysis of the logs for Yes Bank's database reveals a critical issue. There are two separate UPDATE queries executed against the BeneficiaryCBS table, one right after the other:
+
+
+    1. UPDATE BeneficiaryCBS SET amount = amount + 1.00 ... at 15:10:51.
+
+
+    2. UPDATE BeneficiaryCBS SET amount = amount + 1.00 ... at 15:10:52.
+
+This indicates a bug, likely a race condition or a lack of idempotency in the credit processing logic at Yes Bank's end, which caused the customer's account to be credited twice for a single incoming transaction.
