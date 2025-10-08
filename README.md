@@ -220,3 +220,6 @@ We sincerely apologize for the confusion and appreciate your patience.
 
 Thank you,
 Juspay Support"
+
+
+Longer term: fix automation so Paytm auto-marks success when both bank passbooks show credit or when NPCI confirms within configured SLA; add compensating/rollback flows if end outcome is inconsistent.
