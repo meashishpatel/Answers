@@ -59,3 +59,24 @@ WHERE npciRequestId = 'HST<HIDDEN>9910';
 ```
 
 
+
+
+## Answer 5
+The latency for the statusCheck API call with requestId: avd3-XXXX-ae3 was 33 seconds.
+
+This is calculated by comparing the timestamp in the request headers (16:55:00) with the timestamp in the response headers (16:55:33) for that specific requestId in the log file.
+
+For reference: {"x-request-id":"uisu-XXXX-8uj","x-client-id":"<HIDDEN>","content-type":"application/json","x-app-name":"juspay","x-timestamp":"2024-06-05 16:55:33"}
+
+## Answer 5
+When a user initiates a ₹500 UPI payment, NPCI performs a series of database operations to record and track the transaction lifecycle. Based on the observed patterns in the log file, the following queries represent the typical flow at the NPCI end:
+
+Initial Insert — Transaction Creation
+Upon receiving the transaction request from the PSP (e.g., Paytm), NPCI creates a new record marking both debit and credit statuses as PENDING.
+```sql
+INSERT INTO newTransactions 
+    (npciRequestId, amount, payerVPA, payeeVPA, debitStatus, creditStatus, created_at)
+VALUES 
+    ('<npciRequestId>', 500.00, 'payer@axis', 'payee@yes', 'PENDING', 'PENDING', CURRENT_TIMESTAMP);
+```
+
