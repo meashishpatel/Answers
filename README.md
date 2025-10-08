@@ -172,32 +172,32 @@ Yes, delayed transaction confirmations and reconciliation issues are common chal
 ### 🏦 Delays at the Bank's End
 The most common delays originate from the bank's internal systems.
 
-Core Banking System (CBS) Delays: A bank's internal systems might be slow, under heavy load, or may process certain transactions in batches rather than in real-time.
+* Core Banking System (CBS) Delays: A bank's internal systems might be slow, under heavy load, or may process certain transactions in batches rather than in real-time.
 
-Callback Service Outage: The specific service at the bank responsible for sending the final success confirmation back to NPCI might be down or malfunctioning, even if the customer's account was successfully credited.
+* Callback Service Outage: The specific service at the bank responsible for sending the final success confirmation back to NPCI might be down or malfunctioning, even if the customer's account was successfully credited.
 
-Application Logic Bugs: Flaws in the bank's software can lead to incorrect behavior, such as dropping confirmation messages or, as seen with the double-credit issue, processing payments incorrectly.
+* Application Logic Bugs: Flaws in the bank's software can lead to incorrect behavior, such as dropping confirmation messages or, as seen with the double-credit issue, processing payments incorrectly.
 
 ### 🌐 Delays in Communication and Infrastructure
 The issue can also occur while the confirmation message is in transit between systems.
 
-Network Latency or Failure: The connection between the bank and NPCI can be slow or unreliable, causing the callback message to be delayed or lost entirely.
+* Network Latency or Failure: The connection between the bank and NPCI can be slow or unreliable, causing the callback message to be delayed or lost entirely.
 
-Message Queue Issues: In modern systems, messages are passed through queues. If a downstream service is slow, backpressure can build up in these queues, delaying all subsequent messages.
+* Message Queue Issues: In modern systems, messages are passed through queues. If a downstream service is slow, backpressure can build up in these queues, delaying all subsequent messages.
 
-Infrastructure Failures: A server or network node could be down, preventing the message from being sent or received.
+* Infrastructure Failures: A server or network node could be down, preventing the message from being sent or received.
 
 ### 🏢 Delays at the Central Switch (NPCI)
 Even if the bank sends a timely confirmation, the central switch can be a source of delay.
 
-Ingestion and Database Lag: NPCI's systems might be slow to process an incoming confirmation message or experience delays in updating their own databases, especially during peak loads.
+* Ingestion and Database Lag: NPCI's systems might be slow to process an incoming confirmation message or experience delays in updating their own databases, especially during peak loads.
 
 ### 🛠️ Operational and Data Issues
 Finally, some delays are caused by issues that require human intervention.
 
-Malformed Data: The callback from the bank could be malformed or misrouted, causing it to fail processing and require manual correction.
+* Malformed Data: The callback from the bank could be malformed or misrouted, causing it to fail processing and require manual correction.
 
-Manual Review: A transaction might be flagged for a fraud check or operational review, pausing the automated flow until it is manually approved.
+* Manual Review: A transaction might be flagged for a fraud check or operational review, pausing the automated flow until it is manually approved.
 
 ## Answer 13
 Immediate Actions
